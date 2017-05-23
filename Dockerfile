@@ -50,7 +50,7 @@ RUN VERS=1.0.2j && \
     tar xvzf openssl-$VERS.tar.gz && cd openssl-$VERS && \
     env CC=musl-gcc ./config --prefix=/usr/local/musl && \
     env C_INCLUDE_PATH=/usr/local/musl/include/ make depend && \
-    make && sudo make install && \
+    make && make install && \
     cd .. && rm -rf openssl-$VERS.tar.gz openssl-$VERS
 ENV OPENSSL_DIR=/usr/local/musl/ \
     OPENSSL_INCLUDE_DIR=/usr/local/musl/include/ \
