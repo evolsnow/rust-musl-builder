@@ -3,7 +3,7 @@
 FROM ubuntu:16.04
 
 # The Rust toolchain to use when building our image.  Set by `hooks/build`.
-ARG TOOLCHAIN=stable
+ARG TOOLCHAIN=nightly
 
 # Make sure we have basic dev tools for building C libraries.  Our goal
 # here is to support the musl-libc builds and Cargo builds needed for a
@@ -20,23 +20,14 @@ RUN apt-get update && \
         file \
         git \
         musl-tools \
-        sudo \
         xutils-dev \
         && \
     apt-get clean && rm -rf /var/lib/apt/lists/* && \
-    useradd rust --user-group --create-home --shell /bin/bash --groups sudo
-
-# Allow sudo without a password.
-ADD sudoers /etc/sudoers.d/nopasswd
-
-# Run all further code as user `rust`, and create our working directories
-# as the appropriate user.
-USER rust
-RUN mkdir -p /home/rust/libs /home/rust/src
+    mkdir -p /root/libs /root/src
 
 # Set up our path with all our binary directories, including those for the
 # musl-gcc toolchain and for our Rust toolchain.
-ENV PATH=/home/rust/.cargo/bin:/usr/local/musl/bin:/usr/local/bin:/usr/bin:/bin
+ENV PATH=/root/.cargo/bin:/usr/local/musl/bin:/usr/local/bin:/usr/bin:/bin
 
 # Install our Rust toolchain and the `musl` target.  We patch the
 # command-line we pass to the installer so that it won't attempt to
@@ -46,11 +37,11 @@ ENV PATH=/home/rust/.cargo/bin:/usr/local/musl/bin:/usr/local/bin:/usr/bin:/bin
 RUN curl https://sh.rustup.rs -sSf | \
     sh -s -- -y --default-toolchain $TOOLCHAIN && \
     rustup target add x86_64-unknown-linux-musl
-ADD cargo-config.toml /home/rust/.cargo/config
+ADD cargo-config.toml /root/.cargo/config
 
 # We'll build our libraries in subdirectories of /home/rust/libs.  Please
 # clean up when you're done.
-WORKDIR /home/rust/libs
+WORKDIR /root/libs
 
 # Build a static library version of OpenSSL using musl-libc.  This is
 # needed by the popular Rust `hyper` crate.
@@ -73,4 +64,4 @@ ENV OPENSSL_DIR=/usr/local/musl/ \
 
 # Expect our source code to live in /home/rust/src.  We'll run the build as
 # user `rust`, which will be uid 1000, gid 1000 outside the container.
-WORKDIR /home/rust/src
+WORKDIR /root/src
